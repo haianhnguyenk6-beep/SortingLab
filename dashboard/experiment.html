@@ -1,0 +1,45 @@
+<div class="page-heading">
+  <div><span class="eyebrow">PHÒNG THÍ NGHIỆM THUẬT TOÁN</span><h1>Experiment Data</h1><p>Mỗi dạng dữ liệu, một câu chuyện về hiệu năng.<br>Khám phá kết quả đo và kiểm chứng bằng một lần chạy trên máy của bạn.</p></div>
+  <div class="heading-actions"><a class="button secondary" href="#figure-library">Thư viện biểu đồ <span aria-hidden="true">↗</span></a><a class="button" href="#live-benchmark"><span aria-hidden="true">▷</span> Chạy thử trực tiếp</a></div>
+</div>
+<div id="dataError" class="error-banner" role="alert" hidden><span id="dataErrorText">Không tải được dữ liệu.</span><button type="button" id="retry">Tải lại</button></div>
+<section class="kpis" aria-label="Tổng quan dữ liệu thực nghiệm" aria-busy="true" id="kpis">
+  <article class="kpi"><span class="kpi-label">Cấu hình thiết kế</span><span class="kpi-icon" aria-hidden="true">▦</span><div class="kpi-number" id="configCount">—</div><span class="kpi-note">Toàn bộ thí nghiệm trong bộ đo</span></article>
+  <article class="kpi accent"><span class="kpi-label">Cấu hình đã đo</span><span class="kpi-icon" aria-hidden="true">✓</span><div class="kpi-number" id="measuredCount">—</div><span class="kpi-note" id="skippedCount">Đang đọc dữ liệu…</span></article>
+  <article class="kpi"><span class="kpi-label">Quan sát thời gian</span><span class="kpi-icon" aria-hidden="true">◷</span><div class="kpi-number" id="observationCount">—</div><span class="kpi-note">Số lần đo có kết quả hợp lệ</span></article>
+  <article class="kpi"><span class="kpi-label">Biểu đồ thực nghiệm</span><span class="kpi-icon" aria-hidden="true">↗</span><div class="kpi-number" id="figureCount">—</div><span class="kpi-note">Có thể phóng lớn từng biểu đồ</span></article>
+</section>
+<div class="filterbar" role="group" aria-label="Bộ lọc kết quả">
+  <div class="filters"><label class="field" for="dist">Dạng dữ liệu<select id="dist"><option value="random">Ngẫu nhiên</option><option value="sorted">Đã tăng dần</option><option value="reversed">Giảm dần</option><option value="nearly">Gần có thứ tự</option><option value="few_unique">Ít khóa khác nhau</option></select></label><label class="field" for="size">Kích thước mẫu<select id="size"><option value="1000">1.000 phần tử</option><option value="2000">2.000 phần tử</option><option value="4000" selected>4.000 phần tử</option><option value="8000">8.000 phần tử</option><option value="16000">16.000 phần tử</option><option value="32000">32.000 phần tử</option></select></label></div>
+  <div class="filter-meta"><span class="status-dot"></span><strong id="seedMeta">Seed 42</strong><span>·</span><span id="repeatMeta">9 lần lặp</span></div>
+</div>
+<div class="analysis-grid">
+  <section class="panel chart-panel" aria-labelledby="chartTitle">
+    <div class="panel-head"><div><h2 id="chartTitle">Thời gian theo kích thước</h2><p>Xu hướng của 6 thuật toán trên cùng dạng đầu vào.</p></div><div class="segment" role="group" aria-label="Thang đo biểu đồ"><button type="button" data-scale="log" aria-pressed="true">Logarit</button><button type="button" data-scale="linear" aria-pressed="false">Tuyến tính</button></div></div>
+    <button type="button" id="openMainplot" class="chart-action" aria-label="Phóng lớn biểu đồ thời gian"><img id="mainplot" class="chart-img" alt="Biểu đồ thời gian theo kích thước, dữ liệu ngẫu nhiên"></button>
+    <p class="chart-error" id="chartError" role="status" hidden>Không tìm thấy hình cho cấu hình này.</p>
+    <div class="chart-caption"><span id="chartCaption">Hai trục logarit · điểm bị giới hạn chi phí được bỏ qua.</span><a class="button secondary" id="downloadPlot" download href="/figures/time_random_log.svg">Tải SVG <span aria-hidden="true">↓</span></a></div>
+  </section>
+  <section class="panel ranking-panel" aria-labelledby="rankingTitle">
+    <div class="panel-head"><div><h2 id="rankingTitle">Xếp hạng hiệu năng</h2><p id="rankingMeta">Ngẫu nhiên · n = 4.000</p></div><span class="badge">ms</span></div>
+    <div class="ranking-summary"><div><span>Nhanh nhất trong cấu hình</span><b id="winnerName">Đang tải…</b></div><strong id="winnerTime">—</strong></div>
+    <div id="bars" aria-live="polite"></div>
+    <p class="ranking-foot" id="insight">Thời gian trung vị; thanh biểu diễn theo thang logarit. Thanh ngắn hơn là nhanh hơn.</p>
+  </section>
+</div>
+<section class="panel table-panel" aria-labelledby="tableTitle">
+  <div class="panel-head"><div><h2 id="tableTitle">Chi tiết phép đo</h2><p>Cùng cấu hình, nhìn rõ cả thời gian, số phép toán và bộ nhớ.</p></div><span class="table-status" id="tableMeta" aria-live="polite">Đang tải…</span></div>
+  <div class="tablewrap" tabindex="0" aria-label="Bảng kết quả, cuộn ngang để xem tất cả các cột"><table><thead><tr><th scope="col">Thuật toán</th><th scope="col">Trung vị (ms)</th><th scope="col">So sánh</th><th scope="col">Ghi phần tử</th><th scope="col">Bộ nhớ (KiB)</th><th scope="col">CV (%)</th><th scope="col">Trạng thái</th></tr></thead><tbody id="table"></tbody></table></div>
+  <p class="table-note"><strong>Đọc kết quả:</strong> “Bỏ qua” là cấu hình vượt giới hạn chi phí. Dấu “—” là chỉ số không được đo. Timsort chạy trong thư viện Python; cần xét chi phí ngôn ngữ khi so với mã Python thuần.</p>
+</section>
+<section class="panel live-panel" id="live-benchmark" aria-labelledby="liveTitle">
+  <div class="panel-head"><div><div class="section-index">TỰ KIỂM CHỨNG</div><h2 id="liveTitle">Chạy thử trên máy của bạn</h2><p>Tạo dữ liệu mới và đo trực tiếp cả 6 thuật toán. Kết quả hiển thị riêng bên dưới.</p></div><span class="badge good"><span class="status-dot"></span>Đo trực tiếp</span></div>
+  <form id="demoForm" class="live-form"><label class="field" for="demoDist">Dạng dữ liệu<select id="demoDist"><option value="random">Ngẫu nhiên</option><option value="sorted">Đã tăng dần</option><option value="reversed">Giảm dần</option><option value="nearly">Gần có thứ tự</option><option value="few_unique">Ít khóa khác nhau</option></select></label><label class="field" for="demoN">Số phần tử<select id="demoN"><option>100</option><option>500</option><option selected>1000</option><option>2000</option></select></label><label class="field" for="seed">Seed<input id="seed" type="number" step="1" value="42" min="-1000000" max="1000000" required></label><button id="run" type="submit"><span aria-hidden="true">▷</span> Chạy 6 thuật toán</button></form>
+  <p id="demoStatus" class="run-status" role="status" aria-live="polite">Kết quả phụ thuộc máy và điều kiện chạy tại thời điểm đo.</p>
+  <div id="demoEmpty" class="live-empty"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" aria-hidden="true"><path d="M4 20h16M7 16v-5m5 5V4m5 12V8"/></svg><span>Chọn cấu hình và nhấn “Chạy 6 thuật toán” để bắt đầu.</span></div>
+  <div class="live-results" id="demoResults" hidden><div><div class="tablewrap" tabindex="0" aria-label="Kết quả đo trực tiếp"><table><thead><tr><th scope="col">Thuật toán</th><th scope="col">Trung vị (ms)</th><th scope="col">So sánh</th><th scope="col">Ghi</th><th scope="col">KiB</th></tr></thead><tbody id="demoTable"></tbody></table></div></div><div><div id="demoBars"></div><div id="sample" class="sample"></div></div></div>
+</section>
+<details class="panel gallery-panel" id="figure-library"><summary><div><h2>Thư viện biểu đồ thực nghiệm</h2><p>Phân tích hiệu năng, phân phối và mẫu đầu vào. Nhấn để mở thư viện.</p></div></summary><div class="gallery-body"><div class="gallery-filter"><label class="field">Nhóm biểu đồ<select id="galleryCategory"><option value="all">Tất cả</option><option value="time">Thời gian thực thi</option><option value="analysis">Phân tích &amp; đối chiếu</option><option value="sample">Mẫu dữ liệu</option></select></label><span id="galleryCount" role="status"></span></div><div id="gallery" class="gallery"></div></div></details>
+<p class="footnote" id="footnote">Nguồn: bộ đo E1–E4 trong SortingLab. Các kết quả đã lưu được đo trên một môi trường dùng chung; xem phương pháp và giới hạn trong báo cáo đi kèm.</p>
+<dialog id="viewer" class="viewer" aria-labelledby="viewTitle"><div class="viewer-head"><h2 id="viewTitle">Biểu đồ</h2><button type="button" class="button secondary" id="closeViewer" aria-label="Đóng biểu đồ">Đóng <span aria-hidden="true">×</span></button></div><img id="viewImg" alt=""></dialog>
+<script src="/assets/experiment.js" defer></script>

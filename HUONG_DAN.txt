@@ -1,0 +1,14 @@
+SortingLab - Sua GitHub Actions (khong can xoa repository)
+
+1. Sao luu du an SortingLab_FINAL truoc khi sua.
+2. Copy FIX_CI.bat vao thu muc SortingLab_FINAL (cung cap voi START.bat).
+3. Double click FIX_CI.bat. Can ket noi Internet de cai thu vien.
+4. Neu Flake8 hoac pytest bao loi, dung lai va gui log; KHONG push.
+5. Neu ca hai thanh cong, mo Git Bash trong SortingLab_FINAL va chay:
+   git diff --check
+   git add sortinglab tests
+   git commit -m "Fix CI formatting"
+   git push origin main
+6. Mo GitHub > Actions kiem tra.
+
+Luu y: script khong sua 3 dataset, khong xoa repository, khong tu push.

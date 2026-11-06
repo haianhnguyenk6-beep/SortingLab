@@ -1,0 +1,7 @@
+Successful Runs = CALCULATE(COUNTROWS(SortingBenchmark), SortingBenchmark[status] = "ok")
+Median Runtime (ms) = MEDIAN(SortingBenchmark[median_ms])
+Average Runtime (ms) = AVERAGE(SortingBenchmark[median_ms])
+Average Peak Memory (KB) = AVERAGE(SortingBenchmark[peak_kb])
+Fastest Runtime (ms) = MIN(SortingBenchmark[median_ms])
+Slowest Runtime (ms) = MAX(SortingBenchmark[median_ms])
+Success Rate = DIVIDE(CALCULATE(COUNTROWS(SortingBenchmark), SortingBenchmark[status] = "ok"), COUNTROWS(SortingBenchmark))

@@ -1,0 +1,9 @@
+SortingLab CI FIX - 4 files
+
+1. Extract this ZIP into the existing SortingLab_FINAL directory (overwrite 4 files).
+2. Open Git Bash in SortingLab_FINAL.
+3. Run: python -m flake8 sortinglab tests
+4. Run: python -m pytest -q
+5. Only if both pass: git add sortinglab tests && git commit -m "Fix CI lint errors" && git push origin main
+
+No Kaggle CSV files are changed or deleted.

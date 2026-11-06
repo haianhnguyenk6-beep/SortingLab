@@ -1,0 +1,11 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["sortinglab"]
+omit = ["sortinglab/plots.py", "sortinglab/__main__.py"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true

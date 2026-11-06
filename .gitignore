@@ -1,0 +1,21 @@
+# Python / editor
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.hypothesis/
+.coverage
+coverage.xml
+htmlcov/
+.idea/
+.vscode/
+.DS_Store
+
+# Kaggle CSV tracked with Git LFS; keep temporary uploads excluded
+data/uploads/
+
+# Generated outputs and local execution history
+results/
+evidence/
+*.log

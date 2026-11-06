@@ -1,0 +1,18 @@
+SORTINGLAB - GITHUB WITH 3 KAGGLE DATASETS
+
+1. Install Git for Windows and Git LFS (https://git-lfs.com).
+2. Extract this ZIP, open Git Bash in SortingLab_FINAL.
+3. Run:
+   git lfs install
+   git add .gitignore .gitattributes
+   git add data/kaggle/superstore/SampleSuperstore.csv data/kaggle/olist/olist_order_items_dataset.csv data/kaggle/creditcard/creditcard.csv
+   git add -A
+   git commit -m "Include Kaggle datasets with Git LFS"
+   git remote add origin https://github.com/haianhnguyenk6-beep/SortingLab.git
+   git branch -M main
+   git push -u origin main
+
+If origin already exists, use: git remote set-url origin https://github.com/haianhnguyenk6-beep/SortingLab.git
+Verify with: git lfs ls-files
+
+Note: repository is PUBLIC. Verify each Kaggle dataset's redistribution terms before pushing. GitHub LFS storage/bandwidth quotas apply.
