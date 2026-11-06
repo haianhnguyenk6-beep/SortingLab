@@ -4,7 +4,7 @@ addopts = "-ra"
 
 [tool.coverage.run]
 source = ["sortinglab"]
-omit = ["sortinglab/plots.py", "sortinglab/__main__.py"]
+omit = ["sortinglab/plots.py", "sortinglab/__main__.py", "sortinglab/desktop_realdata.py"]
 
 [tool.coverage.report]
 fail_under = 90

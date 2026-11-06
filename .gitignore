@@ -19,3 +19,14 @@ data/uploads/
 results/
 evidence/
 *.log
+
+# Reproducible Experiment Data assets needed by the web UI and CI
+!results/
+results/*
+!results/final/
+results/final/*
+!results/final/summary.csv
+!results/final/raw.csv
+!results/final/figures/
+results/final/figures/*
+!results/final/figures/*.svg
