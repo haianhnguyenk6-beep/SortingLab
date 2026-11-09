@@ -6,7 +6,7 @@ class ReadinessTests(unittest.TestCase):
     def test_six_checks(self):
         rows = readiness_report()
         self.assertEqual(len(rows), 6)
-        self.assertEqual({x['status'] for x in rows} - {'READY', 'MISSING'}, set())
+        self.assertEqual({x['status'] for x in rows} - {'READY', 'MISSING', 'INVALID'}, set())
 
     def test_navigation(self):
         self.assertIn('export-readiness', readiness_page())

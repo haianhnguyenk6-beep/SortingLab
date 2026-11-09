@@ -2,11 +2,11 @@
 setlocal
 cd /d "%~dp0"
 where py >nul 2>nul
-if %errorlevel%==0 (
+if not errorlevel 1 (
   py -3 start.py
 ) else (
   where python >nul 2>nul
-  if %errorlevel%==0 (
+  if not errorlevel 1 (
     python start.py
   ) else (
     echo Python chua duoc cai. Tai tai https://www.python.org/downloads/
@@ -15,4 +15,6 @@ if %errorlevel%==0 (
     exit /b 1
   )
 )
-if errorlevel 1 pause
+set "SORTINGLAB_EXIT_CODE=%errorlevel%"
+if not "%SORTINGLAB_EXIT_CODE%"=="0" pause
+exit /b %SORTINGLAB_EXIT_CODE%

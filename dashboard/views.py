@@ -17,7 +17,8 @@ def real_data_body(datasets):
         label = {"superstore": "Superstore Sales", "olist": "Olist E-Commerce", "creditcard": "Credit Card Fraud"}[key]
         rows.append('<div class="dataset-row"><div><b>' + label + '</b><small>'
                     + html.escape(cfg["file"]) + ' · Cột ' + html.escape(cfg["column"])
-                    + '</small></div><span class="badge ' + ('good">Sẵn sàng' if present else 'warn">Thiếu CSV') + '</span></div>')
+                    + '</small>' + ('<small>' + html.escape(cfg.get('problem', 'Thiếu CSV gốc')) + '</small>' if not present else '')
+                    + '</div><span class="badge ' + ('good">Sẵn sàng' if present else 'warn">Chưa sẵn sàng') + '</span></div>')
         options.append('<option value="' + key + '"' + ('' if present else ' disabled') + '>' + label + '</option>')
         references.append('<a href="https://www.kaggle.com/datasets/' + cfg['slug'] + '" target="_blank" rel="noopener noreferrer">' + label + ' ↗</a>')
     ready = any(present for _, _, present in datasets)
@@ -32,8 +33,9 @@ def real_data_body(datasets):
 
 def batch_body(datasets):
     cells = ''.join('<tr><td>' + html.escape(cfg['title']) + '</td><td><span class="badge '
-                    + ('good">Sẵn sàng' if present else 'warn">Thiếu CSV')
-                    + '</span></td><td>' + html.escape(cfg['column']) + '</td></tr>' for _, cfg, present in datasets)
+                    + ('good">Sẵn sàng' if present else 'warn">Chưa sẵn sàng')
+                    + '</span>' + ('<p>' + html.escape(cfg.get('problem', 'Thiếu CSV gốc')) + '</p>' if not present else '')
+                    + '</td><td>' + html.escape(cfg['column']) + '</td></tr>' for _, cfg, present in datasets)
     ready = sum(present for _, _, present in datasets)
     return '''<div class="page-heading"><div><span class="eyebrow">REAL-LIFE WORKSPACE</span><h1>Benchmark All</h1><p>Một lần chạy, so sánh trên cả ba bộ dữ liệu có sẵn.</p></div><a class="button secondary" href="/results">Xem kết quả ↗</a></div>
     <div class="batch-intro"><section class="panel"><h2>Dữ liệu tham gia phép đo</h2><p>Dataset thiếu CSV được báo rõ và bỏ qua; các bộ còn lại vẫn được chạy.</p><div class="tablewrap"><table><thead><tr><th>Dataset</th><th>Trạng thái</th><th>Cột số</th></tr></thead><tbody>''' + cells + '''</tbody></table></div><p class="table-note">Các CSV có sẵn được lấy từ gói dự án. Số phần tử thực đo phụ thuộc số giá trị hợp lệ trong từng tệp.</p></section>
@@ -48,7 +50,7 @@ def selection_body(filename, columns, source, title):
     return '<div class="page-heading"><div><span class="eyebrow">REAL-LIFE WORKSPACE</span><h1>Cấu hình phép đo</h1><p>' + html.escape(title) + '</p></div><a class="button secondary" href="/real-data">← Đổi dữ liệu</a></div>' + steps(2) + '''
     <section class="panel selection-form"><h2>Chọn dữ liệu cần sắp xếp</h2><div class="selection-file">''' + html.escape(filename) + '<small>' + str(len(columns)) + ''' cột có giá trị số · 6 thuật toán · 3 lần lặp</small></div>
     <form action="/benchmark" method="post"><input type="hidden" name="source" value="''' + html.escape(source, quote=True) + '''"><label class="field">Cột số<select name="column" required>''' + options + '''</select></label><label class="field">Số phần tử tối đa<select name="limit">''' + sizes + '''</select></label><button type="submit">▷ Chạy benchmark</button></form>
-    <p class="table-note">Đọc các giá trị số hợp lệ đầu tiên, tối đa số phần tử bạn chọn. Mẫu từ 10.000 phần tử có thể chạy lâu; Insertion bị bỏ qua khi vượt 10.000 phần tử để giới hạn chi phí.</p></section>'''
+    <p class="table-note">Đọc các giá trị số hợp lệ đầu tiên, tối đa số phần tử bạn chọn. Các trường hợp có chi phí bậc hai ở mẫu trên 4.000 phần tử được bỏ qua. Mỗi thuật toán có giới hạn 15 giây; phép đo quá hạn được ghi là timeout và các thuật toán khác vẫn tiếp tục.</p></section>'''
 
 
 def latest_body(available):

@@ -4,12 +4,16 @@ import csv
 import json
 from pathlib import Path
 from .algorithms import ALGORITHMS
-from .benchmark import timed, memory_peak
+from .csv_input import ensure_csv_data
+from .real_data_plus import (
+    CSV_TIMEOUT_SECONDS, csv_skip_reason, isolated_csv_measurement,
+)
 
 
 def load_numeric(path, column, limit=2000):
     if not 1 <= limit <= 100000:
         raise ValueError("limit must be between 1 and 100000")
+    ensure_csv_data(path)
     with open(path, newline="", encoding="utf-8-sig") as handle:
         reader = csv.DictReader(handle)
         if not reader.fieldnames or column not in reader.fieldnames:
@@ -33,36 +37,28 @@ def load_numeric(path, column, limit=2000):
     return values
 
 
-def benchmark_csv(source, column, out, limit=2000, repeats=3):
+def benchmark_csv(source, column, out, limit=2000, repeats=3,
+                  timeout=CSV_TIMEOUT_SECONDS):
     data = load_numeric(source, column, limit)
     if repeats < 2:
         raise ValueError("repeats must be >= 2")
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     results = []
-    expected = sorted(data)
-    for name, algorithm in ALGORITHMS.items():
+    for name in ALGORITHMS:
         base = dict(dataset=Path(source).name, column=column,
                     algorithm=name, n=len(data))
-        if name == "insertion" and len(data) > 10000:
+        reason = csv_skip_reason(name, data)
+        if reason:
             results.append(dict(**base, median_ms="", peak_kb="",
-                                status="skipped", reason="quadratic_cap_10000"))
+                                status="skipped", reason=reason))
             continue
-        try:
-            if algorithm(data) != expected:
-                raise AssertionError("Incorrect sorting output")
-            samples, _ = timed(algorithm, data, repeats=repeats)
-            import statistics
-            peak = (None if name == "insertion" and len(data) > 4000
-                    else memory_peak(algorithm, data))
-            results.append(dict(
-                **base, median_ms=round(statistics.median(samples), 6),
-                peak_kb=(round(peak, 3) if peak is not None else ""),
-                status="ok", reason="",
-            ))
-        except Exception as exc:
-            results.append(dict(**base, median_ms="", peak_kb="",
-                                status="error", reason=str(exc)))
+        measured = isolated_csv_measurement(name, data, repeats, timeout)
+        results.append(dict(
+            **base, median_ms=measured.get('median_ms', ''),
+            peak_kb=measured.get('peak_kb', ''), status=measured['status'],
+            reason=measured.get('reason', ''),
+        ))
     with out.open("w", newline="", encoding="utf-8-sig") as handle:
         writer = csv.DictWriter(handle, fieldnames=[
             "dataset", "column", "algorithm", "n", "median_ms",

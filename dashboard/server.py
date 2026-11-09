@@ -24,7 +24,8 @@ from urllib.parse import parse_qs, urlsplit, urlencode
 
 from dashboard.ui import render_page
 from dashboard.views import real_data_body, batch_body, selection_body, latest_body, tools_body
-from sortinglab.real_data_plus import run_csv, numeric_columns
+from sortinglab.real_data_plus import run_csv, numeric_columns, read_values
+from sortinglab.csv_input import ensure_csv_data, is_lfs_pointer
 from scripts.build_dashboard import build
 from sortinglab.algorithms import ALGORITHMS
 from sortinglab.benchmark import isolated, summarize
@@ -52,6 +53,30 @@ def dataset_path(key):
     if expected.is_file(): return expected
     matches = [f for f in folder.glob('*.csv') if f.name.lower() == DATASETS[key]['file'].lower()]
     return matches[0] if matches else expected
+
+
+def dataset_state(key):
+    """Check actual numeric data instead of the existence of a CSV filename."""
+    source = dataset_path(key)
+    if not source.is_file():
+        return 'MISSING', 'Thiếu CSV gốc. Tải từ Kaggle hoặc chạy git lfs pull.'
+    pointer = False
+    try:
+        pointer = is_lfs_pointer(source)
+        read_values(source, DATASETS[key]['column'], limit=1)
+    except (OSError, UnicodeError, csv.Error, ValueError) as exc:
+        status = 'MISSING' if pointer else 'INVALID'
+        return status, str(exc)
+    return 'READY', str(source.relative_to(ROOT))
+
+
+def dataset_choices():
+    choices = []
+    for key, cfg in DATASETS.items():
+        status, detail = dataset_state(key)
+        choices.append((key, dict(cfg, problem='' if status == 'READY' else detail),
+                        status == 'READY'))
+    return choices
 
 
 @contextmanager
@@ -149,14 +174,20 @@ def run_all_datasets(sizes=BATCH_SIZES, repeats=3):
         if not source.is_file():
             missing.append(key)
             continue
-        for n in sizes:
-            out = ROOT / 'results' / 'powerbi' / ('batch_' + key + '_' + str(n) + '.csv')
-            rows = run_csv(source, cfg['column'], out, limit=n, repeats=repeats)
-            for row in rows:
-                row['dataset'] = key
-            all_rows.extend(rows)
+        dataset_rows = []
+        try:
+            for n in sizes:
+                out = ROOT / 'results' / 'powerbi' / ('batch_' + key + '_' + str(n) + '.csv')
+                rows = run_csv(source, cfg['column'], out, limit=n, repeats=repeats)
+                for row in rows:
+                    row['dataset'] = key
+                dataset_rows.extend(rows)
+        except (OSError, UnicodeError, csv.Error, ValueError) as exc:
+            missing.append(key + ': ' + str(exc))
+            continue
+        all_rows.extend(dataset_rows)
     if not all_rows:
-        raise ValueError('Chưa có CSV cục bộ. Hãy kiểm tra thư mục data/kaggle.')
+        raise ValueError('Không có CSV hợp lệ để chạy. ' + '; '.join(missing))
     BATCH_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     with BATCH_OUTPUT.open('w', newline='', encoding='utf-8-sig') as f:
         writer = csv.DictWriter(f, fieldnames=HISTORY_FIELDS)
@@ -199,6 +230,7 @@ def dataset_quality_report():
         if path.is_file():
             info['bytes'] = path.stat().st_size
             try:
+                ensure_csv_data(path)
                 with path.open('r', encoding='utf-8-sig', newline='') as stream:
                     reader = csv.DictReader(stream)
                     if not reader.fieldnames or cfg['column'] not in reader.fieldnames:
@@ -217,7 +249,7 @@ def dataset_quality_report():
                                     else: info['invalid_numeric'] += 1
                                 except ValueError:
                                     info['invalid_numeric'] += 1
-            except (OSError, UnicodeError, csv.Error) as exc:
+            except (OSError, UnicodeError, csv.Error, ValueError) as exc:
                 info['error'] = str(exc)
         report.append(info)
     return report
@@ -411,10 +443,10 @@ def readiness_report():
     checks = []
     for key, cfg in DATASETS.items():
         path = dataset_path(key)
-        found = path.is_file()
-        checks.append({'check': cfg['title'], 'status': 'READY' if found else 'MISSING',
-                       'detail': str(path.relative_to(ROOT)) if found else 'Download from Kaggle first',
-                       'bytes': path.stat().st_size if found else 0})
+        status, detail = dataset_state(key)
+        checks.append({'check': cfg['title'], 'status': status,
+                       'detail': detail,
+                       'bytes': path.stat().st_size if path.is_file() else 0})
     for label, path in [('Batch CSV', BATCH_OUTPUT), ('History CSV', HISTORY), ('Latest benchmark CSV', OUTPUT)]:
         checks.append({'check': label, 'status': 'READY' if path.is_file() else 'MISSING',
                        'detail': str(path.relative_to(ROOT)), 'bytes': path.stat().st_size if path.is_file() else 0})
@@ -572,8 +604,10 @@ def reproducibility_manifest():
     datasets = []
     for key, cfg in DATASETS.items():
         source = dataset_path(key)
+        status, detail = dataset_state(key)
         item = {"dataset": key, "kaggle_slug": cfg["slug"], "column": cfg["column"],
-                "present": source.is_file(), "relative_path": str(source.relative_to(ROOT)).replace("\\", "/")}
+                "present": status == 'READY', "status": status, "detail": detail,
+                "relative_path": str(source.relative_to(ROOT)).replace("\\", "/")}
         if source.is_file():
             digest = hashlib.sha256()
             with source.open("rb") as handle:
@@ -671,7 +705,7 @@ class Handler(BaseHTTPRequestHandler):
             elif path.path == '/tools':
                 self.respond(200, page_shell('Công cụ nâng cao', tools_body()).encode(), 'text/html; charset=utf-8')
             elif path.path == "/real-data":
-                datasets = [(key, cfg, dataset_path(key).is_file()) for key, cfg in DATASETS.items()]
+                datasets = dataset_choices()
                 self.respond(200, page_shell('CSV', real_data_body(datasets)).encode(), 'text/html; charset=utf-8')
             elif path.path == '/powerbi-guide':
                 body = "<div class='panel'><h1>Power BI Desktop</h1><p>Nhập tệp Excel Benchmark vào Power BI Desktop bằng Get Data → Excel workbook. Chọn bảng Benchmark.</p><p><a class=download-btn href='/export-batch-excel' role=button><span aria-hidden=true>↓</span> Tải Excel Benchmark All</a> <a class=download-btn href='/export-excel' role=button><span aria-hidden=true>↓</span> Tải Excel lần chạy mới nhất</a> <a class=download-btn href='/export' role=button><span aria-hidden=true>↓</span> Tải CSV</a> <a class=download-btn href='/export-m' role=button><span aria-hidden=true>↓</span> Tải Power Query M</a> <a class=download-btn href='/export-dax' role=button><span aria-hidden=true>↓</span> Tải DAX</a></p></div>"
@@ -747,7 +781,7 @@ class Handler(BaseHTTPRequestHandler):
             elif path.path == '/compare':
                 self.respond(200,comparison_page().encode(),'text/html; charset=utf-8')
             elif path.path == '/batch':
-                datasets = [(key, cfg, dataset_path(key).is_file()) for key, cfg in DATASETS.items()]
+                datasets = dataset_choices()
                 self.respond(200, page_shell('Benchmark All', batch_body(datasets)).encode(), 'text/html; charset=utf-8')
             elif path.path == '/export-batch-excel':
                 data = benchmark_excel_bytes(BATCH_OUTPUT)
@@ -827,7 +861,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.rfile.read(length)
                 with benchmark_session():
                     rows, missing = run_all_datasets()
-                msg = 'Đã tạo '+str(len(rows))+' kết quả đo từ các CSV Kaggle đã tích hợp (nguồn: gói dữ liệu người dùng cung cấp). Dataset còn thiếu: '+(', '.join(missing) if missing else 'không có')
+                msg = 'Đã tạo '+str(len(rows))+' kết quả từ CSV cục bộ. Dataset thiếu hoặc không hợp lệ đã bỏ qua: '+('; '.join(missing) if missing else 'không có')
                 body = "<div class='panel'><h1>Benchmark tổng hợp hoàn tất</h1><p>"+html.escape(msg)+"</p><p><a class=download-btn href='/export-batch-excel' role=button><span aria-hidden=true>↓</span> Tải Excel tổng hợp</a> <a class=download-btn href='/export-batch' role=button><span aria-hidden=true>↓</span> Tải CSV tổng hợp</a> <a href='/history'>Xem lịch sử</a> <a href='/batch'>Chạy lại</a></p></div>"
                 self.respond(200,page_shell('Hoàn tất',body).encode(),'text/html; charset=utf-8')
             elif self.path == '/clear-history':
