@@ -196,3 +196,46 @@ def test_another_tab_cannot_start_overlapping_measurements(http_app):
         status, _, payload = http_app('GET', '/api/demo?n=100&distribution=random&seed=42')
     assert status == 400
     assert 'đang chạy' in json.loads(payload)['error']
+
+
+def test_batch_skips_invalid_dataset_and_keeps_valid_results(http_app, tmp_path, monkeypatch):
+    invalid = tmp_path / 'invalid.csv'
+    invalid.write_text('WrongColumn\n3\n1\n')
+    valid = tmp_path / 'valid.csv'
+    valid.write_text('price\n3\n1\n2\n')
+    paths = {'superstore': invalid, 'olist': valid, 'creditcard': tmp_path / 'missing.csv'}
+    monkeypatch.setattr(app, 'dataset_path', lambda key: paths[key])
+    status, _, page = http_app('POST', '/batch-run', b'')
+    assert status == 200 and b'superstore' in page and b'creditcard' in page
+    status, _, payload = http_app('GET', '/export-batch')
+    assert status == 200
+    rows = list(csv.DictReader(io.StringIO(payload.decode('utf-8-sig'))))
+    assert len(rows) == 18 and {r['dataset'] for r in rows} == {'olist'}
+    assert all(r['status'] == 'ok' for r in rows)
+
+
+def test_lfs_dataset_is_disabled_with_recovery_instructions(http_app, tmp_path, monkeypatch):
+    pointer = tmp_path / 'lfs.csv'
+    pointer.write_text('version https://git-lfs.github.com/spec/v1\n'
+                       'oid sha256:' + 'a' * 64 + '\nsize 1000\n')
+    monkeypatch.setattr(app, 'dataset_path', lambda key: pointer)
+    status, _, page = http_app('GET', '/real-data')
+    assert status == 200 and b'git lfs pull' in page
+    assert b'value="superstore" disabled' in page
+    status, _, page = post_form(http_app, '/use-local-kaggle', dataset='superstore')
+    assert status == 400 and b'git lfs pull' in page
+
+
+def test_report_explains_skipped_and_timed_out_algorithms(tmp_path):
+    source = tmp_path / 'results.csv'
+    source.write_text(
+        'algorithm,median_ms,peak_kb,n,dataset,status,reason\n'
+        'merge,1.2,20,50000,orders.csv,ok,\n'
+        'quick_last,,,50000,orders.csv,skipped,quadratic_cap_4000\n'
+        'quick_mo3,,,50000,orders.csv,timeout,configuration_timeout_15s\n',
+        encoding='utf-8',
+    )
+    target = build(source, tmp_path / 'report.html')
+    page = target.read_text(encoding='utf-8')
+    assert 'quadratic_cap_4000' in page and 'configuration_timeout_15s' in page
+    assert '<td>timeout</td>' in page and '<td>skipped</td>' in page

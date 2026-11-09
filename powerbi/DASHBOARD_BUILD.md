@@ -1,14 +1,26 @@
-# Power BI Desktop dashboard – Sorting Lab
+# Tạo dashboard Power BI từ SortingLab
 
-**Data origin:** Kaggle Store Item Demand Forecasting Challenge (`train.csv`, numeric `sales`). Competition rules may require Kaggle sign-in/acceptance. Never present synthetic CSV as Kaggle data.
+Hướng dẫn đầy đủ: [PowerBI_Dashboard_Instructions.md](PowerBI_Dashboard_Instructions.md).
 
-1. Download `train.csv` from https://www.kaggle.com/competitions/demand-forecasting-kernels-only/data or run `python -m pip install kaggle` and `python -m scripts.kaggle_pipeline --download` after configuring your own Kaggle credentials.
-2. Run `python -m scripts.kaggle_pipeline --csv data/kaggle/store_item_demand/train.csv --column sales --limit 1000 --repeats 3`.
-3. In Power BI Desktop: **Get data > Text/CSV** and choose `results/powerbi/kaggle_benchmark.csv`. Name table **SortingBenchmark**. Confirm numeric data types. Alternatively use `PowerQuery_SortingBenchmark.m` and change the file path.
-4. Add DAX measures from `DAX_Measures.txt` (Modeling > New measure).
-5. Create 4 KPI cards: Successful Runs, Median Runtime (ms), Average Peak Memory (KB), Success Rate.
-6. Clustered bar: Y-axis `algorithm`, X-axis `median_ms`, filter `status = ok`, ascending runtime. Clustered column: X-axis `algorithm`, Y-axis `peak_kb`.
-7. Scatter: X `median_ms`, Y `peak_kb`, Details `algorithm`, Size `n`. Add slicers for `dataset`, `column`, `n`, `run_id`.
-8. Table: `algorithm`, `n`, `repeats`, `min_ms`, `median_ms`, `max_ms`, `peak_kb`, `status`, `reason`. Refresh after new CSV runs.
+## Luồng giao diện web
 
-**Limitations:** `.pbix` must be saved from Power BI Desktop on Windows; this repository provides a complete data pipeline, DAX, Power Query and an offline interactive dashboard, not a prebuilt `.pbix`. Benchmark time depends on machine, input and number of repeats; memory numbers reflect Python measurement method.
+1. Lấy đủ CSV gốc bằng `git lfs install` và `git lfs pull`, hoặc cung cấp CSV từ Kaggle theo README.
+2. Chạy `START.bat` hoặc `python start.py`.
+3. Chạy **Benchmark All**, tải Excel/CSV tổng hợp.
+4. Nhập tệp trong Power BI Desktop. Đặt tên bảng **SortingBenchmark** trước khi thêm DAX.
+
+CSV tổng hợp là `results/powerbi/all_datasets_benchmark.csv`. CSV riêng mới nhất là `results/powerbi/final_benchmark.csv`.
+
+## Luồng dòng lệnh
+
+Trong thư mục gốc dự án:
+
+```bash
+python -m scripts.kaggle_pipeline --dataset superstore --limit 1000 --repeats 3
+```
+
+Lệnh đọc `data/kaggle/superstore/SampleSuperstore.csv`, cột `Sales`, và ghi **`results/powerbi/superstore_benchmark.csv`**. Với `--dataset olist` hoặc `--dataset creditcard`, tên tệp xuất là `olist_benchmark.csv` hoặc `creditcard_benchmark.csv`.
+
+Để tải qua Kaggle CLI, cài `kaggle`, cấu hình thông tin xác thực của chính bạn và thêm `--download`. Dataset mặc định là Superstore, không phải Store Item Demand Forecasting.
+
+Khi dùng `PowerQuery_SortingBenchmark.m`, sửa đường dẫn tuyệt đối và tên CSV theo luồng đã chạy. Mẫu mặc định trỏ đến CSV **Benchmark All**. Lưu `.pbix` trực tiếp trong Power BI Desktop.
