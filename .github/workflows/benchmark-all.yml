@@ -1,0 +1,177 @@
+name: Benchmark All - Kaggle Report
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark-all:
+    name: Run 3 Kaggle datasets and export reports
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout source and Git LFS
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Fetch actual Kaggle CSVs
+        run: |
+          git lfs install --local
+          git lfs pull
+
+      - name: Install Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run benchmark and generate report files
+        run: |
+          cat > _sortinglab_github_benchmark.py <<'PY'
+          """GitHub Actions launcher for SortingLab's real-data batch benchmark."""
+          import csv
+          import os
+          import platform
+          from collections import Counter
+          from datetime import datetime, timezone
+
+          from dashboard.server import (
+              BATCH_OUTPUT,
+              BATCH_SIZES,
+              DATASETS,
+              benchmark_excel_bytes,
+              dataset_state,
+              run_all_datasets,
+          )
+          from sortinglab.algorithms import ALGORITHMS
+
+
+          def main():
+              for name in DATASETS:
+                  status, detail = dataset_state(name)
+                  print(f"CSV {name}: {status} ({detail})", flush=True)
+                  if status != "READY":
+                      raise SystemExit(
+                          f"Required Kaggle CSV {name} is not ready. "
+                          "Check Git LFS and the expected numeric column."
+                      )
+
+              print(
+                  f"Benchmark All: {len(DATASETS)} datasets, {len(ALGORITHMS)} "
+                  f"algorithms, sizes {BATCH_SIZES}, 3 repeats.",
+                  flush=True,
+              )
+              rows, missing = run_all_datasets(sizes=BATCH_SIZES, repeats=3)
+              if missing:
+                  raise SystemExit("Dataset errors: " + "; ".join(missing))
+
+              expected = len(DATASETS) * len(BATCH_SIZES) * len(ALGORITHMS)
+              if len(rows) != expected:
+                  raise SystemExit(
+                      f"Incomplete benchmark: {len(rows)} of {expected} rows."
+                  )
+
+              output = BATCH_OUTPUT.parent
+              excel_path = output / "SortingLab_Benchmark_All.xlsx"
+              excel_path.write_bytes(benchmark_excel_bytes(BATCH_OUTPUT))
+
+              summary_path = output / "Benchmark_Summary_For_Report.csv"
+              columns = (
+                  "dataset", "n", "ok", "skipped", "timeout", "error",
+                  "fastest_algorithm", "fastest_median_ms",
+              )
+              with summary_path.open(
+                  "w", newline="", encoding="utf-8-sig"
+              ) as stream:
+                  writer = csv.DictWriter(stream, fieldnames=columns)
+                  writer.writeheader()
+                  for dataset in DATASETS:
+                      sizes = sorted({
+                          int(row["n"]) for row in rows
+                          if row["dataset"] == dataset
+                      })
+                      if len(sizes) != len(BATCH_SIZES):
+                          raise SystemExit(
+                              f"Unexpected sample sizes for {dataset}: {sizes}"
+                          )
+                      for n in sizes:
+                          group = [
+                              row for row in rows
+                              if row["dataset"] == dataset
+                              and int(row["n"]) == n
+                          ]
+                          counts = Counter(row["status"] for row in group)
+                          valid = [
+                              row for row in group
+                              if row["status"] == "ok"
+                              and row["median_ms"] != ""
+                          ]
+                          fastest = min(
+                              valid, key=lambda row: float(row["median_ms"])
+                          ) if valid else None
+                          writer.writerow({
+                              "dataset": dataset,
+                              "n": n,
+                              "ok": counts["ok"],
+                              "skipped": counts["skipped"],
+                              "timeout": counts["timeout"],
+                              "error": counts["error"],
+                              "fastest_algorithm":
+                                  fastest["algorithm"] if fastest else "",
+                              "fastest_median_ms":
+                                  fastest["median_ms"] if fastest else "",
+                          })
+
+              statuses = Counter(row["status"] for row in rows)
+              metadata = output / "Benchmark_Run_Information.md"
+              metadata.write_text("\n".join([
+                  "# SortingLab Benchmark All - GitHub Actions",
+                  "",
+                  f"- Repository commit: `{os.getenv('GITHUB_SHA', 'local')}`",
+                  f"- GitHub run: `{os.getenv('GITHUB_RUN_ID', 'local')}`",
+                  f"- UTC completed: {datetime.now(timezone.utc).isoformat()}",
+                  f"- Platform: {platform.platform()}",
+                  f"- Python: {platform.python_version()}",
+                  "- Source: 3 real bundled Kaggle CSVs downloaded with Git LFS",
+                  "- Input policy: first n valid numeric values in each file",
+                  f"- Requested sizes: {BATCH_SIZES}; repeats: 3",
+                  "- Superstore can have fewer than 10000 valid values",
+                  "- CPU timing depends on the runner hardware and load",
+                  "- Algorithms with quadratic risk may be marked skipped",
+                  "- Some measurements can be timeout; never treat those as zero",
+                  f"- Status counts: {dict(statuses)}",
+                  f"- Total benchmark records: {len(rows)}",
+                  "",
+                  "Attach the CSV/XLSX and summary to the report only after",
+                  "checking the actual measured values and statuses.",
+              ]) + "\n", encoding="utf-8")
+
+              print(
+                  f"Saved {len(rows)} records, statuses={dict(statuses)}; "
+                  f"Excel: {excel_path}; Summary: {summary_path}",
+                  flush=True,
+              )
+
+
+          if __name__ == "__main__":
+              main()
+          PY
+          python -u _sortinglab_github_benchmark.py
+
+      - name: Upload Excel and CSV results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SortingLab-Benchmark-All-${{ github.run_number }}
+          path: |
+            results/powerbi/all_datasets_benchmark.csv
+            results/powerbi/SortingLab_Benchmark_All.xlsx
+            results/powerbi/Benchmark_Summary_For_Report.csv
+            results/powerbi/Benchmark_Run_Information.md
+          if-no-files-found: warn
+          retention-days: 30
