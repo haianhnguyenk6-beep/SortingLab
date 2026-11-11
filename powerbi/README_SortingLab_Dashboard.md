@@ -12,6 +12,18 @@ This folder contains the working native **SortingLab Power BI Dashboard** and it
 
 **02 — Memory and Details:** KPI cards for median runtime, average peak memory, fastest measurement and success rate; peak memory by algorithm; dataset/size slicers; detailed benchmark table including skipped-run reasons.
 
+## Screenshots from the working Power BI Desktop report
+
+**Page 01 — Algorithm Performance**
+
+![Actual Power BI Desktop: Algorithm Performance](screenshots/01_Algorithm_Performance.png)
+
+**Page 02 — Memory and Details**
+
+![Actual Power BI Desktop: Memory and Details](screenshots/02_Memory_and_Details.png)
+
+These are real report-page screenshots supplied by the project author, not the separate HTML preview.
+
 ## Captured benchmark results
 | Metric | Value |
 | --- | ---: |
