@@ -47,7 +47,17 @@ Xem [hướng dẫn Power BI](powerbi/PowerBI_Dashboard_Instructions.md). Luồn
 - Benchmark All: `results/powerbi/all_datasets_benchmark.csv`.
 - Lịch sử: `results/powerbi/history.csv`.
 
-Tệp `.pbix` cần được tạo và lưu trong Power BI Desktop.
+Dashboard Power BI có sẵn ở [powerbi/SortingLab_Dashboard_Final.pbix](powerbi/SortingLab_Dashboard_Final.pbix), kèm [dự án nguồn và ảnh minh họa](powerbi/README_SortingLab_Dashboard.md). Mở tệp bằng Power BI Desktop.
+
+Dashboard này nhúng kết quả của lần đo đã lưu. Khi chạy benchmark mới, CSV mới không tự thay số liệu trong PBIX. Xem [cách cập nhật nguồn dữ liệu](powerbi/PowerBI_Dashboard_Instructions.md#cập-nhật-dashboard-có-sẵn-bằng-kết-quả-mới).
+
+Để tạo lại báo cáo HTML sau khi đã chạy một CSV trong Real-life Data:
+
+```bash
+python -m scripts.build_dashboard
+```
+
+Lệnh mặc định đọc `results/powerbi/final_benchmark.csv`. Với tệp kết quả khác, truyền `--csv đường_dẫn_tệp.csv`. Bản HTML preview ở `powerbi/SortingLab_Interactive_Dashboard.html` cũng có thể mở riêng và nạp CSV kết quả; CSV sai định dạng được báo ngay trong trang.
 
 ## Kiểm tra mã nguồn
 

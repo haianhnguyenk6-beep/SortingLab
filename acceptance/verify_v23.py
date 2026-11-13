@@ -59,7 +59,7 @@ def collect(run_tests=True):
         except (subprocess.TimeoutExpired,OSError) as exc:
             rows.append({'area':'Automated tests','check':'V23 acceptance tests','status':'BLOCKED','reason':str(exc)})
     rows.extend([
-        {'area':'Windows','check':'Launcher and browser smoke test','status':'NOT TESTED','reason':'Run MO_SORTINGLAB.bat on Windows and record screenshots'},
+        {'area':'Windows','check':'Launcher and browser smoke test','status':'NOT TESTED','reason':'Run START.bat on Windows and record screenshots'},
         {'area':'Power BI','check':'Native .pbix dashboard','status':'NOT TESTED','reason':'Open CSVs in Power BI Desktop, save and inspect PBIX'},
     ])
     return rows

@@ -4,7 +4,7 @@ This folder contains the working native **SortingLab Power BI Dashboard** and it
 
 ## Files
 - **[SortingLab_Dashboard_Final.pbix](SortingLab_Dashboard_Final.pbix)** — final Power BI Desktop report. Download and open with Microsoft Power BI Desktop.
-- **[SortingLab_PowerBI_Source_Project.zip](SortingLab_PowerBI_Source_Project.zip)** — source project (PBIP + Report + SemanticModel + benchmark data and setup guides). Extract the ZIP, then open `SortingLab_Dashboard/SortingLab_Dashboard.pbip`. Refresh the model if prompted.
+- **[SortingLab_PowerBI_Source_Project.zip](SortingLab_PowerBI_Source_Project.zip)** — source project (PBIP + Report + SemanticModel + benchmark data and setup guides). Extract the ZIP, then open `SortingLab_Dashboard/SortingLab_Dashboard.pbip`.
 - [Previous interactive HTML preview](SortingLab_Interactive_Dashboard.html) — a separate HTML demonstration, **not** the Power BI Desktop file.
 
 ## Dashboard pages
@@ -46,5 +46,9 @@ The source experiment compares **insertion, merge, quick_last, quick_mo3, heap a
 2. Open it in **Power BI Desktop**; no ZIP extraction is needed for the PBIX version.
 3. Use its two page tabs and slicers to explore the benchmark.
 4. The editable project is in `SortingLab_PowerBI_Source_Project.zip`. The `.pbip` manifest alone is **not** the complete project.
+
+## Updating the measurements
+
+The current semantic model embeds the captured measurements with Power Query `#table`. Refreshing it does not read a newly generated CSV. To use a new benchmark run, change the `SortingBenchmark` query to read that CSV, preserving the table and column names, then apply changes and save. See the [data-source update instructions](PowerBI_Dashboard_Instructions.md#cập-nhật-dashboard-có-sẵn-bằng-kết-quả-mới). After the query points to a CSV file, Refresh reads the file at the configured path.
 
 GitHub hosts the files for download and version history; it does not render native interactive PBIX content. No sensitive Kaggle raw datasets are included in the Power BI source package, only benchmark measurements. Created from the Power BI Desktop report validated by the user on **2026-11-11**.

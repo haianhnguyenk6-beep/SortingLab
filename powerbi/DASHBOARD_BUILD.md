@@ -2,6 +2,8 @@
 
 Hướng dẫn đầy đủ: [PowerBI_Dashboard_Instructions.md](PowerBI_Dashboard_Instructions.md).
 
+Repository đã có [dashboard PBIX](SortingLab_Dashboard_Final.pbix). Bản này nhúng kết quả của lần đo đã lưu; CSV mới không tự cập nhật vào PBIX. Nếu cần số liệu mới, làm theo [hướng dẫn đổi nguồn truy vấn](PowerBI_Dashboard_Instructions.md#cập-nhật-dashboard-có-sẵn-bằng-kết-quả-mới).
+
 ## Luồng giao diện web
 
 1. Lấy đủ CSV gốc bằng `git lfs install` và `git lfs pull`, hoặc cung cấp CSV từ Kaggle theo README.

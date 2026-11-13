@@ -3,7 +3,13 @@ import argparse,csv,html,math
 from pathlib import Path
 
 def build(source, target):
-    with open(source,encoding="utf-8-sig",newline="") as f: rows=list(csv.DictReader(f))
+    with open(source, encoding='utf-8-sig', newline='') as stream:
+        reader = csv.DictReader(stream)
+        missing = [name for name in ('algorithm', 'median_ms', 'status')
+                   if name not in (reader.fieldnames or [])]
+        if missing:
+            raise ValueError('CSV thiếu cột kết quả benchmark: ' + ', '.join(missing))
+        rows = list(reader)
     clean=[]
     for r in rows:
         if r.get("status")!="ok":continue
@@ -35,5 +41,23 @@ def build(source, target):
     target=Path(target);target.parent.mkdir(parents=True,exist_ok=True);target.write_text(page,encoding="utf-8")
     return target
 
-if __name__=="__main__":
-    p=argparse.ArgumentParser();p.add_argument("--csv",default="results/powerbi/kaggle_benchmark.csv");p.add_argument("--out",default="results/powerbi/FINAL_DASHBOARD.html");a=p.parse_args();print(build(a.csv,a.out))
+def main(argv=None):
+    parser = argparse.ArgumentParser(description='Tạo báo cáo HTML từ kết quả benchmark CSV.')
+    parser.add_argument('--csv', type=Path, default=Path('results/powerbi/final_benchmark.csv'))
+    parser.add_argument('--out', type=Path, default=Path('results/powerbi/FINAL_DASHBOARD.html'))
+    args = parser.parse_args(argv)
+    if not args.csv.is_file():
+        parser.error(
+            f'Chưa có CSV kết quả: {args.csv}. Chạy benchmark trong Real-life Data '
+            'trước, hoặc truyền --csv với đường dẫn kết quả đã có.'
+        )
+    try:
+        target = build(args.csv, args.out)
+    except (OSError, UnicodeError, csv.Error, ValueError) as exc:
+        parser.error(str(exc))
+    print(target)
+    return 0
+
+
+if __name__ == '__main__':
+    main()
